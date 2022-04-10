@@ -1,7 +1,7 @@
 import json
 from flask_pymongo import PyMongo
 from flask import Flask, request
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 CORS(app)
@@ -34,13 +34,12 @@ def check_email():
 @app.route("/register", methods=["POST"])
 def register():
     if request.method == "POST":
-        name = request.form["name"] 
-        username = request.form["username"] 
-        email = request.form["email"]
-        print(name)
-        print(username)
-        print(email)
+        uid = request.form.get("uid")
+        name = request.form.get("name")
+        username = request.form.get("username")
+        email = request.form.get("email")
         mongo.db.users.insert_one({
+            "uid": uid,
             "name": name, 
             "username": username, 
             "email": email, 
@@ -53,9 +52,8 @@ def register():
 
 
 if __name__ == '__main__':
-    app.config["DEBUG"] = True
     app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
 
     mongo = PyMongo(app)
 
-    app.run(host="0.0.0.0", port=5100)
+    app.run(host="0.0.0.0", port=5100, debug=True, use_reloader=False)
