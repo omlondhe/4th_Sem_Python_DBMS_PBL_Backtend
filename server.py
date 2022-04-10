@@ -1,3 +1,4 @@
+from crypt import methods
 import json
 from flask_pymongo import PyMongo
 from flask import Flask, request
@@ -51,9 +52,29 @@ def register():
     return {"registered": False}
 
 
+@app.route("/get-user-data", methods=["GET"])
+def getUserData():
+    if request.method == "GET":
+        uid = request.args.get("uid")
+        cursor = mongo.db.users.find({"uid": uid})
+        result = {}
+        for data in cursor:
+            result["id"] = str(data["_id"])
+            result["uid"] = data["uid"]
+            result["name"] = data["name"]
+            result["username"] = data["username"]
+            result["email"] = data["email"]
+            result["bio"] = data["bio"]
+            result["profileImage"] = data["profileImage"]
+            result["coverImage"] = data["coverImage"]
+        return json.dumps(result)
+    return json.dumps({"status": "failure"})
+
+
+
 if __name__ == '__main__':
     app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
 
     mongo = PyMongo(app)
 
-    app.run(host="0.0.0.0", port=5100, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=5100, debug=True)
