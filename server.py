@@ -1,4 +1,5 @@
 from crypt import methods
+import datetime
 import json
 from flask_pymongo import PyMongo
 from flask import Flask, request
@@ -70,6 +71,22 @@ def getUserData():
         return json.dumps(result)
     return json.dumps({"status": "failure"})
 
+
+@app.route("/add-post", methods=["POST"])
+def addPost():
+    if request.method == "POST":
+        imageURL = request.form.get("imageURL")
+        caption = request.form.get("caption")
+        by = request.form.get("by")
+        mongo.db.posts.insert_one({
+            "imageURL": imageURL,
+            "caption": caption, 
+            "by": by, 
+            "at": datetime.datetime.utcnow(),
+            "likes": [],
+        })
+        return {"added": True}
+    return {"added": False}
 
 
 if __name__ == '__main__':
