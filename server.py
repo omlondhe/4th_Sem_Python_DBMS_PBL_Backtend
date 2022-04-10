@@ -88,6 +88,25 @@ def addPost():
         return {"added": True}
     return {"added": False}
 
+@app.route("/get-posts", methods=["GET"])
+def getPosts():
+    if request.method == "GET":
+        skip = request.args.get("skip")
+        cursor = mongo.db.posts.find().sort(key_or_list="at", direction=-1).skip(int(skip)).limit(10)
+        results = []
+        result = {}
+        
+        for data in cursor:
+            result["imageURL"] = data["imageURL"]
+            result["caption"] = data["caption"] 
+            result["by"] = data["by"] 
+            result["at"] = str(data["at"])
+            result["likes"] = data["likes"]
+            results.append(result)
+        
+        return json.dumps(results)
+    return json.dumps({"status": "failure"})
+
 
 if __name__ == '__main__':
     app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
