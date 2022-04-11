@@ -219,6 +219,13 @@ def getUsers():
     return json.dumps({"status": "failure"})
 
 
+@app.route("/get-current-post-count", methods=["GET"])
+def getCurrentPostCount():
+    if request.method == "GET":
+        return json.dumps({"count": mongo.db.posts.count_documents({})})
+    return json.dumps({"count": 0})
+
+
 if __name__ == '__main__':
     app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
 
