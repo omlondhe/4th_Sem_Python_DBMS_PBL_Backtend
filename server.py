@@ -88,6 +88,7 @@ def addPost():
         return {"added": True}
     return {"added": False}
 
+
 @app.route("/get-posts", methods=["GET"])
 def getPosts():
     if request.method == "GET":
@@ -106,6 +107,92 @@ def getPosts():
         
         return json.dumps(results)
     return json.dumps({"status": "failure"})
+
+
+@app.route("/update", methods=["POST"])
+def update():
+    if request.method == "POST":
+        uid = request.form.get("uid")
+        name = request.form.get("name")
+        username = request.form.get("username")
+        bio = request.form.get("bio")
+        mongo.db.users.update_one(
+            {"uid": uid}, 
+            {
+                "$set": {
+                    "name": name, 
+                    "username": username, 
+                    "bio": bio, 
+                }
+            })
+        return {"updated": True}
+    return {"updated": False}
+
+
+@app.route("/remove-profile-image", methods=["POST"])
+def removeProfileImage():
+    if request.method == "POST":
+        uid = request.form.get("uid")
+        mongo.db.users.update_one(
+            {"uid": uid},
+            {
+                "$set": {
+                    "profileImage": ""
+                }
+            }
+        )
+        return {"removed": True}
+    return {"removed": False}
+
+
+@app.route("/remove-cover-image", methods=["POST"])
+def removeCoverImage():
+    if request.method == "POST":
+        uid = request.form.get("uid")
+        mongo.db.users.update_one(
+            {"uid": uid},
+            {
+                "$set": {
+                    "coverImage": ""
+                }
+            }
+        )
+        return {"removed": True}
+    return {"removed": False}
+
+
+@app.route("/update-profile-image", methods=["POST"])
+def updateProfileImage():
+    if request.method == "POST":
+        uid = request.form.get("uid")
+        profileImage = request.form.get("profileImage")
+        mongo.db.users.update_one(
+            {"uid": uid},
+            {
+                "$set": {
+                    "profileImage": profileImage
+                }
+            }
+        )
+        return {"updated": True}
+    return {"updated": False}
+
+
+@app.route("/update-cover-image", methods=["POST"])
+def updateCoverImage():
+    if request.method == "POST":
+        uid = request.form.get("uid")
+        coverImage = request.form.get("coverImage")
+        mongo.db.users.update_one(
+            {"uid": uid},
+            {
+                "$set": {
+                    "coverImage": coverImage
+                }
+            }
+        )
+        return {"updated": True}
+    return {"updated": False}
 
 
 if __name__ == '__main__':
