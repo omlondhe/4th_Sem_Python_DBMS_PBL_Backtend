@@ -3,7 +3,7 @@ import datetime
 import json
 from flask_pymongo import PyMongo
 from flask import Flask, request
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
@@ -193,6 +193,30 @@ def updateCoverImage():
         )
         return {"updated": True}
     return {"updated": False}
+
+
+@app.route("/get-users", methods=["GET"])
+def getUsers():
+    if request.method == "GET":
+        searchString = request.args.get("searchString")
+        cursor = mongo.db.users.find({
+            "$or": [
+                {"name": { "$regex": searchString }},
+                {"username": { "$regex": searchString }} 
+            ]
+        })
+        results = []
+        result = {}
+        
+        for data in cursor:
+            result["name"] = data["name"]
+            result["username"] = data["username"] 
+            result["uid"] = data["uid"] 
+            result["profileImage"] = data["profileImage"]
+            results.append(result)
+        
+        return json.dumps(results)
+    return json.dumps({"status": "failure"})
 
 
 if __name__ == '__main__':
