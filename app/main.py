@@ -9,6 +9,9 @@ from bson.objectid import ObjectId
 
 app = Flask(__name__)
 CORS(app)
+client = MongoClient("mongodb+srv://worldcon:worldcon@cluster0.niwe7.mongodb.net/worldcon?retryWrites=true&w=majority", tlsCAFile=certifi.where())
+app.run(host="0.0.0.0", port=5100, debug=True)
+db = client.test
 
 @app.route('/')
 def hello_world():
@@ -282,12 +285,12 @@ def getCurrentPostCount():
     return json.dumps({"count": 0})
 
 
-if __name__ == '__main__':
-    # app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
+# if __name__ == '__main__':
+#     # app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
 
-    # mongo = PyMongo(app)
+#     # mongo = PyMongo(app)
 
-    client = MongoClient("mongodb+srv://worldcon:worldcon@cluster0.niwe7.mongodb.net/worldcon?retryWrites=true&w=majority", tlsCAFile=certifi.where())
-    db = client.test
+#     client = MongoClient("mongodb+srv://worldcon:worldcon@cluster0.niwe7.mongodb.net/worldcon?retryWrites=true&w=majority", tlsCAFile=certifi.where())
+#     db = client.test
 
-    app.run(host="0.0.0.0", port=5100, debug=True)
+#     app.run(host="0.0.0.0", port=5100, debug=True)
