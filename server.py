@@ -4,6 +4,7 @@ import json
 from flask_pymongo import PyMongo
 from flask import Flask, request
 from flask_cors import CORS
+from bson.objectid import ObjectId
 
 app = Flask(__name__)
 CORS(app)
@@ -93,19 +94,73 @@ def addPost():
 def getPosts():
     if request.method == "GET":
         skip = request.args.get("skip")
-        cursor = mongo.db.posts.find().sort(key_or_list="at", direction=-1).skip(int(skip)).limit(10)
+        cursor = mongo.db.posts.find().skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
         results = []
         result = {}
         
         for data in cursor:
+            result["id"] = str(data["_id"])
             result["imageURL"] = data["imageURL"]
             result["caption"] = data["caption"] 
             result["by"] = data["by"] 
             result["at"] = str(data["at"])
             result["likes"] = data["likes"]
             results.append(result)
+            result = {}
         
         return json.dumps(results)
+    return json.dumps({"status": "failure"})
+
+
+@app.route("/get-profile-posts", methods=["GET"])
+def getProfilePosts():
+    if request.method == "GET":
+        skip = request.args.get("skip")
+        uid = request.args.get("uid")
+        cursor = mongo.db.posts.find({"by": uid}).skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
+        results = []
+        result = {}
+        
+        for data in cursor:
+            result["id"] = str(data["_id"])
+            result["imageURL"] = data["imageURL"]
+            result["caption"] = data["caption"] 
+            result["by"] = data["by"] 
+            result["at"] = str(data["at"])
+            result["likes"] = data["likes"]
+            results.append(result)
+            result = {}
+        
+        return json.dumps(results)
+    return json.dumps({"status": "failure"})
+
+
+@app.route("/delete-post", methods=["POST"])
+def getDeletePost():
+    if request.method == "POST":
+        id = request.form.get("id")
+        mongo.db.posts.delete_one({"_id": ObjectId(id)})
+        return json.dumps({"status": "deleted"})
+    return json.dumps({"status": "failure"})
+
+
+@app.route("/like-post", methods=["POST"])
+def getLikePost():
+    if request.method == "POST":
+        id = request.form.get("id")
+        uid = request.form.get("uid")
+        mongo.db.posts.update_one({"_id": ObjectId(id)}, {"$push": {"likes": uid}})
+        return json.dumps({"status": "liked"})
+    return json.dumps({"status": "failure"})
+
+
+@app.route("/dislike-post", methods=["POST"])
+def getDisLikePost():
+    if request.method == "POST":
+        id = request.form.get("id")
+        uid = request.form.get("uid")
+        mongo.db.posts.update_one({"_id": ObjectId(id)}, {"$pull": {"likes": uid}})
+        return json.dumps({"status": "disliked"})
     return json.dumps({"status": "failure"})
 
 
