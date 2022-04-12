@@ -1,9 +1,10 @@
 from crypt import methods
 import datetime
 import json
-from flask_pymongo import PyMongo
+from flask_pymongo import PyMongo, MongoClient
 from flask import Flask, request
 from flask_cors import CORS
+import certifi
 from bson.objectid import ObjectId
 
 app = Flask(__name__)
@@ -18,7 +19,7 @@ def hello_world():
 def check_username():
     if request.method == "GET":
         username = request.args.get("username")
-        result = mongo.db.users.find({"username": username})
+        result = db.users.find({"username": username})
         for _ in result:
             return json.dumps({"exist": True})
         return json.dumps({"exist": False})
@@ -28,7 +29,7 @@ def check_username():
 def check_email():
     if request.method == "GET":
         email = request.args.get("email")
-        result = mongo.db.users.find({"email": email})
+        result = db.users.find({"email": email})
         for _ in result:
             return json.dumps({"exist": True})
         return json.dumps({"exist": False})
@@ -41,7 +42,7 @@ def register():
         name = request.form.get("name")
         username = request.form.get("username")
         email = request.form.get("email")
-        mongo.db.users.insert_one({
+        db.users.insert_one({
             "uid": uid,
             "name": name, 
             "username": username, 
@@ -58,7 +59,7 @@ def register():
 def getUserData():
     if request.method == "GET":
         uid = request.args.get("uid")
-        cursor = mongo.db.users.find({"uid": uid})
+        cursor = db.users.find({"uid": uid})
         result = {}
         for data in cursor:
             result["id"] = str(data["_id"])
@@ -79,7 +80,7 @@ def addPost():
         imageURL = request.form.get("imageURL")
         caption = request.form.get("caption")
         by = request.form.get("by")
-        mongo.db.posts.insert_one({
+        db.posts.insert_one({
             "imageURL": imageURL,
             "caption": caption, 
             "by": by, 
@@ -94,7 +95,7 @@ def addPost():
 def getPosts():
     if request.method == "GET":
         skip = request.args.get("skip")
-        cursor = mongo.db.posts.find().skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
+        cursor = db.posts.find().skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
         results = []
         result = {}
         
@@ -117,7 +118,7 @@ def getProfilePosts():
     if request.method == "GET":
         skip = request.args.get("skip")
         uid = request.args.get("uid")
-        cursor = mongo.db.posts.find({"by": uid}).skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
+        cursor = db.posts.find({"by": uid}).skip(int(skip)).limit(10).sort(key_or_list="at", direction=-1)
         results = []
         result = {}
         
@@ -139,7 +140,7 @@ def getProfilePosts():
 def getDeletePost():
     if request.method == "POST":
         id = request.form.get("id")
-        mongo.db.posts.delete_one({"_id": ObjectId(id)})
+        db.posts.delete_one({"_id": ObjectId(id)})
         return json.dumps({"status": "deleted"})
     return json.dumps({"status": "failure"})
 
@@ -149,7 +150,7 @@ def getLikePost():
     if request.method == "POST":
         id = request.form.get("id")
         uid = request.form.get("uid")
-        mongo.db.posts.update_one({"_id": ObjectId(id)}, {"$push": {"likes": uid}})
+        db.posts.update_one({"_id": ObjectId(id)}, {"$push": {"likes": uid}})
         return json.dumps({"status": "liked"})
     return json.dumps({"status": "failure"})
 
@@ -159,7 +160,7 @@ def getDisLikePost():
     if request.method == "POST":
         id = request.form.get("id")
         uid = request.form.get("uid")
-        mongo.db.posts.update_one({"_id": ObjectId(id)}, {"$pull": {"likes": uid}})
+        db.posts.update_one({"_id": ObjectId(id)}, {"$pull": {"likes": uid}})
         return json.dumps({"status": "disliked"})
     return json.dumps({"status": "failure"})
 
@@ -171,7 +172,7 @@ def update():
         name = request.form.get("name")
         username = request.form.get("username")
         bio = request.form.get("bio")
-        mongo.db.users.update_one(
+        db.users.update_one(
             {"uid": uid}, 
             {
                 "$set": {
@@ -188,7 +189,7 @@ def update():
 def removeProfileImage():
     if request.method == "POST":
         uid = request.form.get("uid")
-        mongo.db.users.update_one(
+        db.users.update_one(
             {"uid": uid},
             {
                 "$set": {
@@ -204,7 +205,7 @@ def removeProfileImage():
 def removeCoverImage():
     if request.method == "POST":
         uid = request.form.get("uid")
-        mongo.db.users.update_one(
+        db.users.update_one(
             {"uid": uid},
             {
                 "$set": {
@@ -221,7 +222,7 @@ def updateProfileImage():
     if request.method == "POST":
         uid = request.form.get("uid")
         profileImage = request.form.get("profileImage")
-        mongo.db.users.update_one(
+        db.users.update_one(
             {"uid": uid},
             {
                 "$set": {
@@ -238,7 +239,7 @@ def updateCoverImage():
     if request.method == "POST":
         uid = request.form.get("uid")
         coverImage = request.form.get("coverImage")
-        mongo.db.users.update_one(
+        db.users.update_one(
             {"uid": uid},
             {
                 "$set": {
@@ -254,7 +255,7 @@ def updateCoverImage():
 def getUsers():
     if request.method == "GET":
         searchString = request.args.get("searchString")
-        cursor = mongo.db.users.find({
+        cursor = db.users.find({
             "$or": [
                 {"name": { "$regex": searchString }},
                 {"username": { "$regex": searchString }} 
@@ -277,13 +278,16 @@ def getUsers():
 @app.route("/get-current-post-count", methods=["GET"])
 def getCurrentPostCount():
     if request.method == "GET":
-        return json.dumps({"count": mongo.db.posts.count_documents({})})
+        return json.dumps({"count": db.posts.count_documents({})})
     return json.dumps({"count": 0})
 
 
 if __name__ == '__main__':
-    app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
+    # app.config["MONGO_URI"] = "mongodb://localhost:27017/worldcon"
 
-    mongo = PyMongo(app)
+    # mongo = PyMongo(app)
+
+    client = MongoClient("mongodb+srv://worldcon:worldcon@cluster0.niwe7.mongodb.net/worldcon?retryWrites=true&w=majority", tlsCAFile=certifi.where())
+    db = client.test
 
     app.run(host="0.0.0.0", port=5100, debug=True)
